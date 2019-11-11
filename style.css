@@ -14,3 +14,14 @@
 #charts svg {
   background-color: #C7D9D9;
 }
+
+
+/* responsive.html*/
+#chart {
+  background: lightgray;
+  border: 1px solid black;
+}
+
+rect {
+  fill: steelblue;
+}

@@ -1,7 +1,7 @@
 const fileInput = document.getElementById('file')
 const loading = document.getElementById('loading')
 
-const svgWidth = 1080, svgHeight = 300, barPadding = 5
+const svgWidth = 1080, svgHeight = 400, barPadding = 5
 
 let headers, cities, barWidth
 
@@ -16,31 +16,36 @@ const createChart = i => {
   d3.select('#charts').append('svg').classed(className, true)
 
   const dataset = cities
-    .map(city => parseFloat(city[i]) ? parseFloat(city[i]) : false)
+    .map(city => (
+      parseFloat(city[i]) 
+        ? { label: city[0], 
+            value: parseFloat(city[i]) }
+        : false)
+      )
     .filter(res => !!res)
     .slice(0, 30)
-    .sort((a , b) => a - b)
+    .sort((a , b) => a.value - b.value)
 
   const barWidth = (svgWidth / dataset.length)
+
+  max = d3.max(dataset, d => d.value);
   
   const svg = d3.select('.' + className)
     .attr("width", svgWidth)
     .attr("height", svgHeight)
-
-  const xScale = d3.scaleLinear()
-    .domain([0, d3.max(dataset)])
-    .range([0, svgWidth])
-
-  const yScale = d3.scaleLinear()
-    .domain([0, d3.max(dataset)])
-    .range([0, svgHeight])
   
-  const yScaleLabels = d3.scaleLinear()
-    .domain([0, d3.max(dataset)])
-    .range([svgHeight, 0])
+  const yScale = d3.scaleLinear()
+  .domain([0, max])
+  .range([0, svgHeight])
 
-  const xAxis = d3.axisBottom()
-    .scale(xScale)
+  // const xScale = d3.scaleLinear()
+  //   .domain([0, max])
+  //   .range([0, svgWidth])
+  
+  // reverse labels on y axis
+  const yScaleLabels = d3.scaleLinear()
+    .domain([0, max])
+    .range([svgHeight, 0])
 
   const yAxis = d3.axisLeft()
     .scale(yScaleLabels)
@@ -49,18 +54,21 @@ const createChart = i => {
     .attr('transform', 'translate(50, 10)')
     .call(yAxis)
 
-  const xAxisTranslate = svgHeight - 20
+  // const xAxis = d3.axisBottom()
+  //   .scale(xScale)
 
-  svg.append('g')
-    .attr('transform', `translate(50, ${xAxisTranslate})`)
-    .call(xAxis)
+  // const xAxisTranslate = svgHeight - 20
+
+  // svg.append('g')
+  //   .attr('transform', `translate(50, ${xAxisTranslate})`)
+  //   .call(xAxis)
 
   const barChart = svg.selectAll("rect")
     .data(dataset)
     .enter()
     .append("rect")
-    .attr("y", d => svgHeight - yScale(d))
-    .attr("height", d => yScale(d))
+    .attr("y", d => svgHeight - yScale(d.value))
+    .attr("height", d => yScale(d.value))
     .attr("width", barWidth - barPadding)
     .attr("transform", (d, i) => {
       var translate = [barWidth * i, 0] 
@@ -71,9 +79,9 @@ const createChart = i => {
     .data(dataset)
     .enter()
     .append('text')
-    .text(d => d + 'in')
+    .text(d => d.value + 'in')
     .attr('font-size', '10px')
-    .attr('y', (d, i) => (svgHeight - d) - barPadding)
+    .attr('y', (d, i) => (svgHeight - d.value) - barPadding)
     .attr('x', (d, i) => barWidth * i)
     .attr('fill', "#A64C38")
 }
