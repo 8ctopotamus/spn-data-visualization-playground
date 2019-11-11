@@ -1,42 +1,56 @@
 const fileInput = document.getElementById('file')
 const loading = document.getElementById('loading')
 
-const svgWidth = 960, svgHeight = 300, barPadding = 1
+const svgWidth = 1080, svgHeight = 300, barPadding = 5
 
 let headers, cities, barWidth
 
 const createChart = i => {
-
   if (headers[i].toLowerCase().includes('date'))
     return
 
   const className = 'chart-' + i
-    d3.select('#charts').append('h3').text(headers[i])
-    d3.select('#charts').append('svg').classed(className, true)
+
+  d3.select('#charts').append('h3').text(headers[i])
+  d3.select('#charts').append('svg').classed(className, true)
 
   const dataset = cities
     .map(city => parseFloat(city[i]) ? parseFloat(city[i]) : false)
     .filter(res => !!res)
+    .slice(0, 30)
+    .sort((a , b) => a - b)
+
   const barWidth = (svgWidth / dataset.length)
+  
   const svg = d3.select('.' + className)
     .attr("width", svgWidth)
     .attr("height", svgHeight)
+
+  const yScale = d3.scaleLinear()
+    .domain([0, d3.max(dataset)])
+    .range([0, svgHeight])
       
-  svg.selectAll("rect")
+  const barChart = svg.selectAll("rect")
     .data(dataset)
     .enter()
     .append("rect")
-    .attr("y", function(d) {
-      return svgHeight - d 
-    })
-    .attr("height", function(d) { 
-      return d 
-    })
+    .attr("y", d => svgHeight - yScale(d))
+    .attr("height", d => yScale(d))
     .attr("width", barWidth - barPadding)
-    .attr("transform", function (d, i) {
+    .attr("transform", (d, i) => {
         var translate = [barWidth * i, 0] 
         return "translate("+ translate +")"
     })
+
+  const text = svg.selectAll('text')
+    .data(dataset)
+    .enter()
+    .append('text')
+    .text(d => d + 'in')
+    .attr('font-size', '10px')
+    .attr('y', (d, i) => (svgHeight - d) - barPadding)
+    .attr('x', (d, i) => barWidth * i)
+    .attr('fill', "#A64C38")
 }
 
 const parseCSVFile = () => {
