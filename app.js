@@ -8,10 +8,11 @@ let headers, cities, barWidth
 const createChart = i => {
   if (headers[i].toLowerCase().includes('date'))
     return
+  
+  d3.select('#charts').append('h3').text(headers[i])
 
   const className = 'chart-' + i
 
-  d3.select('#charts').append('h3').text(headers[i])
   d3.select('#charts').append('svg').classed(className, true)
 
   const dataset = cities
@@ -26,10 +27,34 @@ const createChart = i => {
     .attr("width", svgWidth)
     .attr("height", svgHeight)
 
+  const xScale = d3.scaleLinear()
+    .domain([0, d3.max(dataset)])
+    .range([0, svgWidth])
+
   const yScale = d3.scaleLinear()
     .domain([0, d3.max(dataset)])
     .range([0, svgHeight])
-      
+  
+  const yScaleLabels = d3.scaleLinear()
+    .domain([0, d3.max(dataset)])
+    .range([svgHeight, 0])
+
+  const xAxis = d3.axisBottom()
+    .scale(xScale)
+
+  const yAxis = d3.axisLeft()
+    .scale(yScaleLabels)
+
+  svg.append('g')
+    .attr('transform', 'translate(50, 10)')
+    .call(yAxis)
+
+  const xAxisTranslate = svgHeight - 20
+
+  svg.append('g')
+    .attr('transform', `translate(50, ${xAxisTranslate})`)
+    .call(xAxis)
+
   const barChart = svg.selectAll("rect")
     .data(dataset)
     .enter()
@@ -38,8 +63,8 @@ const createChart = i => {
     .attr("height", d => yScale(d))
     .attr("width", barWidth - barPadding)
     .attr("transform", (d, i) => {
-        var translate = [barWidth * i, 0] 
-        return "translate("+ translate +")"
+      var translate = [barWidth * i, 0] 
+      return `translate(${translate})`
     })
 
   const text = svg.selectAll('text')
