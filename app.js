@@ -1,98 +1,84 @@
 const fileInput = document.getElementById('file')
-const loading = document.getElementById('loading')
 
-const svgWidth = 1080, svgHeight = 400, barPadding = 5
+const margin = { top: 10, right: 20, bottom: 30, left: 30 };
+const width = 400 - margin.left - margin.right;
+const height = 300 - margin.top - margin.bottom;
 
-let headers, cities, barWidth
+let headers, cities
+
+const formatData = i => {
+  return cities
+    .map(city => (
+      parseFloat(city[i]) 
+        ? { label: city[0], value: parseFloat(city[i]) }
+        : false)
+    )
+    .filter(res => !!res)
+    .slice(0, 30) // limit to 30 for now
+    .sort((a , b) => a.value - b.value)
+}
 
 const createChart = i => {
   if (headers[i].toLowerCase().includes('date'))
     return
   
-  d3.select('#charts').append('h3').text(headers[i])
-
   const className = 'chart-' + i
 
-  d3.select('#charts').append('svg').classed(className, true)
+  d3.select('.container').append('h3').text(headers[i])
+  d3.select('.container')
+    .append('div').classed('chart', true)
+    .append('svg')
+    .classed(className, true)
 
-  const dataset = cities
-    .map(city => (
-      parseFloat(city[i]) 
-        ? { label: city[0], 
-            value: parseFloat(city[i]) }
-        : false)
-      )
-    .filter(res => !!res)
-    .slice(0, 30)
-    .sort((a , b) => a.value - b.value)
+  const dataset = formatData(i)
 
-  const barWidth = (svgWidth / dataset.length)
+  const cityNames = dataset.map(d => d.label)
+  const snowfall = dataset.map(d => d.value)
+  const max = d3.max(snowfall)
 
-  max = d3.max(dataset, d => d.value);
-  
-  const svg = d3.select('.' + className)
-    .attr("width", svgWidth)
-    .attr("height", svgHeight)
+  const xScale = d3.scaleBand()
+    .padding(0.2)
+    .domain(snowfall)
+    .range([0, width]);
   
   const yScale = d3.scaleLinear()
-  .domain([0, max])
-  .range([0, svgHeight])
-
-  // const xScale = d3.scaleLinear()
-  //   .domain([0, max])
-  //   .range([0, svgWidth])
-  
-  // reverse labels on y axis
-  const yScaleLabels = d3.scaleLinear()
     .domain([0, max])
-    .range([svgHeight, 0])
+    .range([height, 0]);
+  
+  const svg = d3.select('.' + className)
+    .attr('width', width + margin.left + margin.right)
+    .attr('height', height + margin.top + margin.bottom)
+    .call(responsivefy)
+  
+  svg.append('g')
+    .attr('transform', `translate(${margin.left}, ${margin.top})`)
 
-  const yAxis = d3.axisLeft()
-    .scale(yScaleLabels)
+  svg.selectAll('rect')
+    .data(snowfall)
+    .enter()
+      .append('rect')
+      .attr('x', d => xScale(d) + margin.left)
+      .attr('y', d => yScale(d))
+      .attr('width', d => xScale.bandwidth())
+      .attr('height', d => height - yScale(d))
 
   svg.append('g')
-    .attr('transform', 'translate(50, 10)')
-    .call(yAxis)
+  .attr('transform', `translate(${margin.left}, 0)`)
+  .attr("class", "axis")
+  .call(d3.axisLeft(yScale));
 
-  // const xAxis = d3.axisBottom()
-  //   .scale(xScale)
+  svg.append('g')
+    .attr('transform', `translate(${margin.left}, ${height})`)
+    .attr("class", "axis")
+    .call(d3.axisBottom(xScale));
 
-  // const xAxisTranslate = svgHeight - 20
-
-  // svg.append('g')
-  //   .attr('transform', `translate(50, ${xAxisTranslate})`)
-  //   .call(xAxis)
-
-  const barChart = svg.selectAll("rect")
-    .data(dataset)
-    .enter()
-    .append("rect")
-    .attr("y", d => svgHeight - yScale(d.value))
-    .attr("height", d => yScale(d.value))
-    .attr("width", barWidth - barPadding)
-    .attr("transform", (d, i) => {
-      var translate = [barWidth * i, 0] 
-      return `translate(${translate})`
-    })
-
-  const text = svg.selectAll('text')
-    .data(dataset)
-    .enter()
-    .append('text')
-    .text(d => d.value + 'in')
-    .attr('font-size', '10px')
-    .attr('y', (d, i) => (svgHeight - d.value) - barPadding)
-    .attr('x', (d, i) => barWidth * i)
-    .attr('fill', "#A64C38")
 }
 
 const parseCSVFile = () => {
   const file = fileInput.files[0]
   if (!file) return
-  setLoading(true)
   Papa.parse(file, {
     complete: function(results) {
-      setLoading(false)
       headers = results.data[0]
       cities = results.data.slice(1)
       for (let i = 6; i < headers.length; i++) {
@@ -103,6 +89,23 @@ const parseCSVFile = () => {
   })
 }
 
-const setLoading = bool => bool ? loading.style.display = 'block' : loading.style.display = 'none'
+function responsivefy(svg) {
+  const container = d3.select(svg.node().parentNode),
+      width = parseInt(svg.style('width'), 10),
+      height = parseInt(svg.style('height'), 10),
+      aspect = width / height;
+
+  svg.attr('viewBox', `0 0 ${width} ${height}`)
+      .attr('preserveAspectRatio', 'xMinYMid')
+      .call(resize);
+
+  d3.select(window).on('resize.' + container.attr('id'), resize);
+
+  function resize() {
+      const targetWidth = parseInt(container.style('width'));
+      svg.attr('width', targetWidth);
+      svg.attr('height', Math.round(targetWidth / aspect));
+  }
+}
 
 fileInput.addEventListener('change', parseCSVFile)

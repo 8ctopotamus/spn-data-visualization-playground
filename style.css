@@ -1,27 +1,12 @@
-.chart rect {
-  font: 10px sans-serif;
-  background-color: steelblue;
-  text-align: right;
-  padding: 3px;
-  margin: 1px;
-  color: white;
-}
-
-#loading {
-  display: none;
-}
-
-#charts svg {
-  background-color: #C7D9D9;
-}
-
-
-/* responsive.html*/
-#chart {
-  background: lightgray;
+.chart {
+  background:  #C7D9D9;;
   border: 1px solid black;
+  margin-bottom: 35px;
+  width: 100%;
 }
 
 rect {
   fill: steelblue;
 }
+
+.axis { font: 5px sans-serif; }
