@@ -1,0 +1,16 @@
+.chart rect {
+  font: 10px sans-serif;
+  background-color: steelblue;
+  text-align: right;
+  padding: 3px;
+  margin: 1px;
+  color: white;
+}
+
+#loading {
+  display: none;
+}
+
+#charts svg {
+  background-color: #C7D9D9;
+}
